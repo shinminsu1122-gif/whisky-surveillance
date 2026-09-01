@@ -1,0 +1,40 @@
+name: Kilkerran 16 (2026) Watch
+
+# 매시간 정각에 자동 실행 (UTC 기준. 한국시간 -9시간)
+# 그리고 GitHub 화면에서 수동으로도 바로 실행해볼 수 있게 해둠(workflow_dispatch)
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # seen_links.json 변경사항을 저장소에 다시 커밋하기 위해 필요
+    steps:
+      - name: 저장소 코드 가져오기
+        uses: actions/checkout@v4
+
+      - name: 파이썬 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 필요한 패키지 설치
+        run: pip install -r requirements.txt
+
+      - name: 스크립트 실행
+        env:
+          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+          SENDER_APP_PASSWORD: ${{ secrets.SENDER_APP_PASSWORD }}
+          RECEIVER_EMAIL: ${{ secrets.RECEIVER_EMAIL }}
+        run: python kilkerran_watch.py
+
+      - name: 확인한 상품 기록(seen_links.json) 저장소에 저장
+        run: |
+          git config user.name "kilkerran-watch-bot"
+          git config user.email "actions@github.com"
+          git add seen_links.json
+          git diff --staged --quiet || git commit -m "update seen links"
+          git push
