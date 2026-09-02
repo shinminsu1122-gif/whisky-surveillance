@@ -1,0 +1,42 @@
+name: Whisky Multi-Site Watch
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: 저장소 코드 가져오기
+        uses: actions/checkout@v4
+
+      - name: 파이썬 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 필요한 패키지 설치
+        run: pip install -r requirements.txt
+
+      - name: 스크립트 실행
+        env:
+          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+          SENDER_APP_PASSWORD: ${{ secrets.SENDER_APP_PASSWORD }}
+          RECEIVER_EMAIL: ${{ secrets.RECEIVER_EMAIL }}
+        run: python whisky_watch.py
+
+      - name: 확인한 상품 기록(seen_links.json) 저장소에 저장
+        run: |
+          git config user.name "whisky-watch-bot"
+          git config user.email "actions@github.com"
+          if [ -f seen_links.json ]; then
+            git add seen_links.json
+            git diff --staged --quiet || git commit -m "update seen links"
+            git push
+          else
+            echo "아직 새 상품이 없어서 저장할 게 없음"
+          fi
