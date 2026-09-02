@@ -35,6 +35,10 @@ jobs:
         run: |
           git config user.name "kilkerran-watch-bot"
           git config user.email "actions@github.com"
-          git add seen_links.json
-          git diff --staged --quiet || git commit -m "update seen links"
-          git push
+          if [ -f seen_links.json ]; then
+            git add seen_links.json
+            git diff --staged --quiet || git commit -m "update seen links"
+            git push
+          else
+            echo "아직 새 상품이 없어서 저장할 게 없음"
+          fi
